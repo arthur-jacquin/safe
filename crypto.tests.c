@@ -11,8 +11,8 @@
 static void
 test_little_endian_conversions(void)
 {
-    static const uint8_t TEST_BYTES[4] = {0x01, 0x23, 0x45, 0x67};
-    static const uint32_t TEST_WORD = 0x67452301;
+    const uint8_t TEST_BYTES[4] = {0x01, 0x23, 0x45, 0x67};
+    const uint32_t TEST_WORD = 0x67452301;
 
     uint8_t bytes[4];
 
@@ -24,13 +24,13 @@ test_little_endian_conversions(void)
 static void
 test_chacha20_keystream(void)
 {
-    static const uint8_t TEST_KEY[32] = {
+    const uint8_t TEST_KEY[32] = {
         0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,
         0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e,0x1f};
-    static const uint8_t TEST_INIT_VECTOR[16] = {
+    const uint8_t TEST_INIT_VECTOR[16] = {
         0x01,0x00,0x00,0x00, // block counter = 1 (little endian)
         0x00,0x00,0x00,0x09,0x00,0x00,0x00,0x4a,0x00,0x00,0x00,0x00}; // nounce
-    static const uint8_t TEST_EXPECTED_KEYSTREAM[64] = {
+    const uint8_t TEST_EXPECTED_KEYSTREAM[64] = {
         0x10,0xf1,0xe7,0xe4,0xd1,0x3b,0x59,0x15,0x50,0x0f,0xdd,0x1f,0xa3,0x20,0x71,0xc4,
         0xc7,0xd1,0xf4,0xc7,0x33,0xc0,0x68,0x03,0x04,0x22,0xaa,0x9a,0xc3,0xd4,0x6c,0x4e,
         0xd2,0x82,0x64,0x46,0x07,0x9f,0xaa,0x09,0x14,0xc2,0xd7,0x05,0xd9,0x8b,0x02,0xa2,
@@ -45,23 +45,23 @@ test_chacha20_keystream(void)
 static void
 test_murmur3_hash(void)
 {
-    assert(murmur3_hash("", 0, 0x00000000) == 0x00000000);
-    assert(murmur3_hash("", 0, 0x00000001) == 0x514e28b7);
-    assert(murmur3_hash("", 0, 0xffffffff) == 0x81f16f39);
-    assert(murmur3_hash("test", 4, 0x00000000) == 0xba6bd213);
-    assert(murmur3_hash("test", 4, 0x9747b28c) == 0x704b81dc);
-    assert(murmur3_hash("Hello, world!", 13, 0x00000000) == 0xc0363e43);
-    assert(murmur3_hash("Hello, world!", 13, 0x9747b28c) == 0x24884cba);
-    assert(murmur3_hash("The quick brown fox jumps over the lazy dog", 43,
-        0x00000000) == 0x2e4ff723);
-    assert(murmur3_hash("The quick brown fox jumps over the lazy dog", 43,
-        0x9747b28c) == 0x2fa826cd);
+    assert(murmur3_hash((uint8_t *) "", 0, 0x00000000) == 0x00000000);
+    assert(murmur3_hash((uint8_t *) "", 0, 0x00000001) == 0x514e28b7);
+    assert(murmur3_hash((uint8_t *) "", 0, 0xffffffff) == 0x81f16f39);
+    assert(murmur3_hash((uint8_t *) "test", 4, 0x00000000) == 0xba6bd213);
+    assert(murmur3_hash((uint8_t *) "test", 4, 0x9747b28c) == 0x704b81dc);
+    assert(murmur3_hash((uint8_t *) "Hello, world!", 13, 0x00000000) == 0xc0363e43);
+    assert(murmur3_hash((uint8_t *) "Hello, world!", 13, 0x9747b28c) == 0x24884cba);
+    assert(murmur3_hash((uint8_t *) "The quick brown fox jumps over the lazy dog",
+        43, 0x00000000) == 0x2e4ff723);
+    assert(murmur3_hash((uint8_t *) "The quick brown fox jumps over the lazy dog",
+        43, 0x9747b28c) == 0x2fa826cd);
 }
 
 static void
 test_text_symmetric_encryption(void)
 {
-    static const struct text TEST_PLAINTEXT = (struct text) {
+    const struct text TEST_PLAINTEXT = (struct text) {
         .init_vector = {
             0xf2,0x37,0x85,0x1d,0x28,0x54,0x44,0xb4,
             0xa8,0xc1,0xe4,0x2a,0x9a,0x12,0x53,0x5f},
@@ -72,14 +72,14 @@ test_text_symmetric_encryption(void)
             0xf6,0xee,0x4f,0x29,0x26,0x3b,0x90,0xd9},
         .length = 20,
     };
-    static const char TEST_KEY[] = "z`Xs.d+e%9D5y#~C2F*<Z?";
+    const char TEST_KEY[] = "z`Xs.d+e%9D5y#~C2F*<Z?";
 
     struct text encrypted, decrypted = {0};
 
-    text_symmetric_encryption(TEST_PLAINTEXT, 1, TEST_KEY, strlen(TEST_KEY),
-        &encrypted);
-    text_symmetric_encryption(encrypted, 0, TEST_KEY, strlen(TEST_KEY),
-        &decrypted);
+    text_symmetric_encryption(TEST_PLAINTEXT, 1, (uint8_t *) TEST_KEY,
+        strlen(TEST_KEY), &encrypted);
+    text_symmetric_encryption(encrypted, 0, (uint8_t *) TEST_KEY,
+        strlen(TEST_KEY), &decrypted);
     assert(!memcmp(decrypted.init_vector, TEST_PLAINTEXT.init_vector,
         sizeof(TEST_PLAINTEXT.init_vector)));
     assert(!memcmp(decrypted.text, TEST_PLAINTEXT.text,

@@ -123,7 +123,7 @@ text_symmetric_encryption(const struct text src, int encrypt,
 
     size_t sum = 0;
     uint8_t chacha_key[32], keystream[64];
-    uint8_t *plaintext = encrypt ? src.text : dest->text;
+    const uint8_t *plaintext = encrypt ? src.text : dest->text;
 
     memcpy(dest->init_vector, src.init_vector, sizeof(dest->init_vector));
     murmur3_chained_hash(key, key_length, little_endian_bytes_to_word(

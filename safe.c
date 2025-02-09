@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "crypto.h"
-#include "random.h"
 
 
 #define DEFAULT_PASSWORD_CHARACTER_SET  PRINTABLE
@@ -63,6 +62,8 @@ static void put_formatted_output(const char *format, struct text password,
     struct text username, int valid_username);
 static void put_text(const struct text text);
 
+static void random_bytes(uint8_t dest[], size_t length, uint8_t max_bound);
+
 static void randomized_encryption(struct text plaintext, const uint8_t key[],
     size_t key_length, struct text *ciphertext);
 static void create_password_entry(struct definition key_def,
@@ -80,7 +81,7 @@ static const char *CHARACTER_SETS[] = {
         "\\]^_`abcdefghijklmnopqrstuvwxyz{|}~",
 };
 static const char USAGE[] =
-    "safe " VERSION " - simple symmetric password encrypter\n"
+    "safe " VERSION " - simple symmetric-key password encrypter\n"
     "\n"
     "safe c|create [OPTIONS]        create password entry\n"
     "safe q|query [OPTIONS] [FILE]  query password entry\n"
@@ -131,7 +132,7 @@ parse_character_set(const char *identifier)
     else if (IS_EITHER(identifier, "p", "printable")) return PRINTABLE;
     else die(EXIT_FAILURE, "Invalid character set identifier");
     return 0; // unreachable
-};
+}
 
 static void
 parse_definition(struct definition definition, enum decode_mode decode_mode,
@@ -154,7 +155,7 @@ parse_definition(struct definition definition, enum decode_mode decode_mode,
         *length = definition.length;
         if (!(0 <= *length && *length < 32)) goto invalid_length;
         possible_characters = CHARACTER_SETS[definition.character_set];
-        random_bytes_bounded(random, *length, strlen(possible_characters));
+        random_bytes(random, *length, strlen(possible_characters));
         for (size_t i = 0; i < *length; i++)
             fixed_size_buffer[i] = possible_characters[random[i]];
         break;
@@ -189,12 +190,12 @@ parse_definition(struct definition definition, enum decode_mode decode_mode,
         switch (decode_mode) {
         case ANY_SIZE_BUFFER:
             *length = strlen(definition.value);
-            *any_size_buffer = definition.value;
+            *any_size_buffer = (uint8_t *) definition.value;
             break;
         case FIXED_SIZE_BUFFER:
             *length = strlen(definition.value);
             if (!(0 <= *length && *length < 32)) goto invalid_length;
-            strncpy(fixed_size_buffer, definition.value, *length);
+            strncpy((char *) fixed_size_buffer, definition.value, *length);
             break;
         case STREAM: goto unsupported;
         }
@@ -304,14 +305,40 @@ put_text(const struct text text)
 }
 
 static void
+random_bytes(uint8_t dest[], size_t length, uint8_t max_bound)
+{
+    // use operating system pseudorandom number generator
+    // max_bound is an optional exclusive upper bound
+
+    FILE *random = fopen("/dev/random", "r");
+    if (!random) goto failure;
+    if (max_bound == 0) {
+        if (fread(dest, 1, length, random) < length) goto failure;
+    } else {
+        uint8_t threshold = max_bound * (256 / max_bound);
+        for (size_t i = 0; i < length; i++) {
+            do {
+                if (fread(dest + i, 1, 1, random) < 1) goto failure;
+            } while (dest[i] >= threshold);
+            dest[i] %= max_bound;
+        }
+    }
+    if (fclose(random) == EOF) goto failure;
+    return;
+
+failure: die(EXIT_FAILURE, "Cannot generate random values");
+}
+
+static void
 randomized_encryption(struct text plaintext, const uint8_t key[],
     size_t key_length, struct text *ciphertext)
 {
-    // plaintext.text first plaintext.length bytes are assumed to be valid
+    // only the first plaintext.length bytes of plaintext.text are considered
+    // meaningful
 
     random_bytes(plaintext.text + plaintext.length, sizeof(plaintext.text) -
-        plaintext.length);
-    random_bytes(plaintext.init_vector, sizeof(plaintext.init_vector));
+        plaintext.length, 0);
+    random_bytes(plaintext.init_vector, sizeof(plaintext.init_vector), 0);
     text_symmetric_encryption(plaintext, 1, key, key_length, ciphertext);
 }
 
@@ -373,14 +400,14 @@ generate_noise(void)
 {
     uint8_t bytes[16];
 
-    random_bytes(bytes, sizeof(bytes));
+    random_bytes(bytes, sizeof(bytes), 0);
     put_bytes_as_hex(bytes, sizeof(bytes));
     put('\n');
 }
 
 
 int
-main(int argc, char *argv[])
+main(int argc, const char *argv[])
 {
     const char **arg, *notes = NULL, *output_format = "%p";
     struct definition
