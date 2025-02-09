@@ -1,0 +1,29 @@
+safe - simple symmetric-key password encrypter
+==============================================
+safe is a simple symmetric-key encrypter. Combined with usual Unix
+utilities, it can be used as a suckless, flexible password manager.
+
+
+Installation
+------------
+Edit config.mk to match your local setup (safe is installed into
+the /usr/local namespace by default).
+
+Afterwards enter the following command to build and install safe (if
+necessary as root):
+
+    make clean tests install
+
+
+Usage
+-----
+Please refer to the manual page for more information.
+
+
+Cryptographic security
+----------------------
+safe uses its own implementation of a custom system involving Chacha20
+at its core, Murmur3 and host system pseudorandom number generation.
+
+Despite copyright holders' active efforts to ensure its security, no
+warranty of any kind is provided, as specified in the LICENSE.
