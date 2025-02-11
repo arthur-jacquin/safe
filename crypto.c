@@ -130,7 +130,7 @@ text_symmetric_encryption(const struct text src, int encrypt,
         src.init_vector + 12), chacha_key, sizeof(chacha_key));
     chacha20_keystream(chacha_key, src.init_vector, keystream);
     for (size_t i = 0; i < sizeof(dest->text); i++)
-        dest->text[i] = src.text[i] ^ keystream[i + (i < 16 ? 0 : 48)];
+        dest->text[i] = src.text[i] ^ keystream[i + (i < 16 ? 0 : 32)];
     for (size_t i = 0; i < sizeof(src.text); i++)
         sum += plaintext[i];
     dest->length = (src.length + (encrypt ? 32 - (sum % 32) : (sum % 32))) % 32;
