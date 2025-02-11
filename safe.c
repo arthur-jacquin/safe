@@ -9,6 +9,7 @@
 #include "crypto.h"
 
 
+#define BUFFER_CHUNK_SIZE               128
 #define DEFAULT_PASSWORD_CHARACTER_SET  PRINTABLE
 #define DEFAULT_PASSWORD_LENGTH         20
 #define DEFAULT_USERNAME_CHARACTER_SET  PRINTABLE
@@ -46,6 +47,8 @@ struct definition {
 };
 
 
+static void bufferize_stream(FILE *stream, const uint8_t **buffer,
+    size_t *length);
 static void die(int exit_status, const char *msg);
 
 static enum character_set parse_character_set(const char *identifier);
@@ -117,6 +120,22 @@ static FILE *out = NULL;
 
 
 static void
+bufferize_stream(FILE *stream, const uint8_t **buffer, size_t *length)
+{
+    char *buffer_ = NULL, c;
+    size_t capacity = 0, length_ = 0;
+
+    while ((c = fgetc(stream)) != EOF) {
+        if (c == '\n') continue; // ignore newline characters
+        if (length_ == capacity)
+            buffer_ = realloc(buffer_, capacity += BUFFER_CHUNK_SIZE);
+        buffer_[length_++] = c;
+    }
+    *buffer = (uint8_t *) buffer_; *length = length_;
+    printf("Length: %ld\n", length_);
+}
+
+static void
 die(int exit_status, const char *msg)
 {
     if (msg)
@@ -172,7 +191,8 @@ parse_definition(struct definition definition, enum decode_mode decode_mode,
     decode_stream:
         switch (decode_mode) {
         case ANY_SIZE_BUFFER:
-            goto TODO;
+            bufferize_stream(to_be_decoded_stream, any_size_buffer, length);
+            break;
         case FIXED_SIZE_BUFFER:
             for (*length = 0; *length < 32; (*length)++) {
                 if ((fixed_size_buffer[*length] = fgetc(to_be_decoded_stream)) == '\n')
