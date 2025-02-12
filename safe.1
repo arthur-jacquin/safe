@@ -1,0 +1,91 @@
+.TH SAFE 1 safe\-VERSION
+.SH NAME
+safe \- simple symmetric-key password encrypter
+.SH SYNOPSIS
+.B safe c|create
+.I [OPTIONS]
+.nf
+.fi
+.B safe q|query
+.I [OPTIONS] [FILE]
+.nf
+.fi
+.B safe n|noise
+.SH DESCRIPTION
+.B safe
+is a password encrypter/decrypter using a symmetric\-key encryption algorithm.
+It encodes data in a textual, two-line (one for password, one for username)
+format.
+.SH OPTIONS
+.nf
+\-o|\--output <file>
+.ni
+.SS Key (default: interactive prompt)
+.nf
+-k|--key <key>
+-K|--key-file <file>
+.ni
+.SS Password (create subcommand only, default: random generation)
+.nf
+-p|--password <password>
+-c|--password-character-set <generated-password-character-set-id> (default: p)
+-l|--password-length <generated-password-length> (default: 20)
+.ni
+.SS Username (create subcommand only, default: none)
+.nf
+-u|--username <username>
+-U|--random-username
+-C|--username-character-set <generated-username-character-set-id> (default: p)
+-L|--username-length <generated-username-length> (default: 20)
+.ni
+.SS Notes (create subcommand only, default: none)
+.nf
+-n|--notes <notes>
+.ni
+.SS Query output (query subcommand only, default: password)
+.nf
+-f|--format <output-format>
+-p|--password                  short for: --format %p
+-u|--username                  short for: --format %u
+-s|--separator <separator>     short for: --format %u<separator>%p
+.ni
+.SS Characters sets
+.nf
+d|digits                       0 to 9
+l|lowercase                    a to z
+p|printable                    alphanumeric and special characters
+.ni
+.SH NOTES
+.SS Password management
+.B safe
+is NOT a password manager.
+The user has both the responsability and the flexibility to manage its
+encrypted password entries in its own way.
+A typical use is to store each entry in a dedicated file, organize them in a
+file tree, and use tarballs or a version control system to backup/synchronize
+them.
+.P
+When querying a password entry,
+.B safe
+only considers the first two lines.
+Thus, additional lines can be used to store metadata.
+.SS Cryptographic security
+.B safe
+uses its own implementation of a custom system involving Chacha20 at its core,
+as well as Murmur3 and host system pseudorandom number generation.
+Despite active efforts to ensure its security, no warranty of any kind is
+provided, as specified in the LICENSE.
+.SH EXAMPLES
+.in +4n
+.nf
+.B # safe create --key key --password password > entry.safe
+.B # cat entry.safe
+]e623d8e07fbb9d8817dd2fc9d91c4e40dfba813a87be7f6502e47e528634040a5c1bec0d10b8ac3397cab81968f8066e
+.B # safe query --key key entry.safe # | clipboard-program
+password
+.fi
+.in
+.SH SEE ALSO
+.BR pass (1)
+.SH BUGS
+Send all bug reports with a patch to arthur@jacquin.xyz.
