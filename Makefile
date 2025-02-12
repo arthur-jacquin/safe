@@ -1,24 +1,19 @@
 # safe - simple symmetric-key password encrypter
 # See LICENSE file for copyright and license details.
 
+default: safe
+
 include config.mk
-
-default: tests
-
-tests: crypto.tests safe
-	./crypto.tests
-	@echo "[TESTS] All tests passed"
-
-.PHONY: tests
+include tests.mk
 
 clean:
-	rm -f safe crypto.tests *.o safe-${VERSION}.tar.gz
+	rm -f safe crypto.tests *.test *.o safe-${VERSION}.tar.gz
 
 .PHONY: clean
 
 dist: clean
 	mkdir -p safe-${VERSION}
-	cp -R LICENSE Makefile README config.mk safe.1 \
+	cp -R LICENSE Makefile README config.mk tests.mk safe.1 \
 		safe.c crypto.h crypto.c crypto.tests.c safe-${VERSION}
 	tar -cf safe-${VERSION}.tar safe-${VERSION}
 	gzip safe-${VERSION}.tar
@@ -40,6 +35,11 @@ uninstall:
 	rm -f ${DESTDIR}${PREFIX}/bin/safe ${DESTDIR}${MANPREFIX}/man1/safe.1
 
 .PHONY: uninstall
+
+tests: ${TESTS}
+	@echo "[TESTS] All tests passed"
+
+.PHONY: tests
 
 safe: %: %.o crypto.o
 
