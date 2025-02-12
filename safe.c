@@ -385,7 +385,7 @@ create_password_entry(struct definition key_def, struct definition password_def,
     if (valid_username) {
         randomized_encryption(plaintext, key, key_length, &username);
         put_text(username);
-    } else if (notes) put('\n');
+    } else put('\n');
 
     if (notes) {
         while (*notes)
