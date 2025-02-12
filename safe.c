@@ -133,7 +133,6 @@ bufferize_stream(FILE *stream, const uint8_t **buffer, size_t *length)
         buffer_[length_++] = c;
     }
     *buffer = (uint8_t *) buffer_; *length = length_;
-    printf("Length: %ld\n", length_);
 }
 
 static void
