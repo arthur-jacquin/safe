@@ -461,32 +461,20 @@ main(int argc, const char *argv[])
     for (arg = argv + 2; *arg; arg++) {
         if (IS_EITHER(*arg, "-o", "--output")) {
             EXPECT_ARGUMENT();
-            if (IS(*arg, "-")) {
-                output_def.mode = STDOUT;
-            } else {
-                output_def.mode = FILENAME;
-                output_def.value = *arg;
-            }
+            output_def.mode = IS(*arg, "-") ? STDOUT : FILENAME;
+            output_def.value = *arg;
         } else if (IS_EITHER(*arg, "-k", "--key") && subcommand != NOISE) {
             EXPECT_ARGUMENT();
-            if (IS(*arg, "-")) {
-                key_def.mode = STDIN;
-            } else {
-                key_def.mode = STRING;
-                key_def.value = *arg;
-            }
+            key_def.mode = IS(*arg, "-") ? STDIN : STRING;
+            key_def.value = *arg;
         } else if (IS_EITHER(*arg, "-K", "--key-file") && subcommand != NOISE) {
             EXPECT_ARGUMENT();
             key_def.mode = FILENAME;
             key_def.value = *arg;
         } else if (IS_EITHER(*arg, "-p", "--password") && subcommand == CREATE) {
             EXPECT_ARGUMENT();
-            if (IS(*arg, "-")) {
-                password_def.mode = STDIN;
-            } else {
-                password_def.mode = STRING;
-                password_def.value = *arg;
-            }
+            password_def.mode = IS(*arg, "-") ? STDIN : STRING;
+            password_def.value = *arg;
         } else if (IS_EITHER(*arg, "-l", "--password-length") && subcommand == CREATE) {
             EXPECT_ARGUMENT();
             char *remaining;
@@ -497,12 +485,8 @@ main(int argc, const char *argv[])
             password_def.character_set = parse_character_set(*arg);
         } else if (IS_EITHER(*arg, "-u", "--username") && subcommand == CREATE) {
             EXPECT_ARGUMENT();
-            if (IS(*arg, "-")) {
-                username_def.mode = STDIN;
-            } else {
-                username_def.mode = STRING;
-                username_def.value = *arg;
-            }
+            username_def.mode = IS(*arg, "-") ? STDIN : STRING;
+            username_def.value = *arg;
         } else if (IS_EITHER(*arg, "-U", "--random-username") && subcommand == CREATE) {
             username_def.mode = RANDOMLY_GENERATED;
         } else if (IS_EITHER(*arg, "-L", "--username-length") && subcommand == CREATE) {
@@ -534,12 +518,8 @@ main(int argc, const char *argv[])
     // parse positional arguments
     if (subcommand == QUERY && *arg) {
         if (IS(*arg, "--")) EXPECT_ARGUMENT();
-        if (IS(*arg, "-")) {
-            entry_def.mode = STDIN;
-        } else {
-            entry_def.mode = FILENAME;
-            entry_def.value = *arg;
-        }
+        entry_def.mode = IS(*arg, "-") ? STDIN : FILENAME;
+        entry_def.value = *arg;
         arg++;
     }
     if (*arg) goto invalid_usage;
