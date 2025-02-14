@@ -14,7 +14,7 @@ clean:
 dist: clean
 	mkdir -p safe-${VERSION}
 	cp -R LICENSE Makefile README config.mk tests.mk safe.1 \
-		safe.c crypto.h crypto.c crypto.tests.c safe-${VERSION}
+		safe.c crypto.h crypto.c crypto.tests.c safe_prompt safe-${VERSION}
 	tar -cf safe-${VERSION}.tar safe-${VERSION}
 	gzip safe-${VERSION}.tar
 	rm -rf safe-${VERSION}
@@ -25,6 +25,8 @@ install: safe
 	mkdir -p ${DESTDIR}${PREFIX}/bin
 	cp -f safe ${DESTDIR}${PREFIX}/bin
 	chmod 755 ${DESTDIR}${PREFIX}/bin/safe
+	cp -f safe_prompt ${DESTDIR}${PREFIX}/bin
+	chmod 755 ${DESTDIR}${PREFIX}/bin/safe_prompt
 	mkdir -p ${DESTDIR}${MANPREFIX}/man1
 	sed "s/VERSION/${VERSION}/g" < safe.1 > ${DESTDIR}${MANPREFIX}/man1/safe.1
 	chmod 644 ${DESTDIR}${MANPREFIX}/man1/safe.1
@@ -32,7 +34,8 @@ install: safe
 .PHONY: install
 
 uninstall:
-	rm -f ${DESTDIR}${PREFIX}/bin/safe ${DESTDIR}${MANPREFIX}/man1/safe.1
+	rm -f ${DESTDIR}${PREFIX}/bin/safe ${DESTDIR}${PREFIX}/bin/safe_prompt \
+		${DESTDIR}${MANPREFIX}/man1/safe.1
 
 .PHONY: uninstall
 

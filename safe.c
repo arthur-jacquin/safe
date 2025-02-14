@@ -33,7 +33,6 @@ enum decode_mode {
 };
 struct definition {
     enum mode {
-        INTERACTIVE_PROMPT,
         FILENAME,
         NONE,
         RANDOMLY_GENERATED,
@@ -92,7 +91,7 @@ static const char USAGE[] =
     "\n"
     "OPTIONS:\n"
     "-o|--output <file>\n"
-    "KEY (default: interactive prompt):\n"
+    "KEY (default: none):\n"
     "-k|--key <key>\n"
     "-K|--key-file <file>\n"
     "PASSWORD (create subcommand only, default: random generation):\n"
@@ -165,8 +164,6 @@ parse_definition(struct definition definition, enum decode_mode decode_mode,
     if (valid)
         *valid = definition.mode != NONE;
     switch (definition.mode) {
-    case INTERACTIVE_PROMPT:
-        goto TODO;
     case NONE:
         break;
     case RANDOMLY_GENERATED:
@@ -225,7 +222,6 @@ parse_definition(struct definition definition, enum decode_mode decode_mode,
 
 invalid_length: die(EXIT_FAILURE, "Invalid length");
 unsupported: exit(EXIT_FAILURE);
-TODO: die(EXIT_FAILURE, "Not implemented");
 }
 
 static int
@@ -369,10 +365,11 @@ create_password_entry(struct definition key_def, struct definition password_def,
     const uint8_t *key;
     size_t key_length;
     struct text plaintext, password, username;
-    int valid_username;
+    int valid_key, valid_username;
 
-    parse_definition(key_def, ANY_SIZE_BUFFER, "r", NULL, &key, NULL,
+    parse_definition(key_def, ANY_SIZE_BUFFER, "r", &valid_key, &key, NULL,
         &key_length, NULL);
+    if (!valid_key) die(EXIT_FAILURE, "No key provided");
 
     parse_definition(password_def, FIXED_SIZE_BUFFER, "r", NULL, NULL,
         plaintext.text, &plaintext.length, NULL);
@@ -401,11 +398,12 @@ query_password_entry(struct definition entry_def, struct definition key_def,
     const uint8_t *key;
     size_t key_length;
     struct text ciphertext, password, username;
-    int valid_username;
+    int valid_key, valid_username;
 
     parse_definition(entry_def, STREAM, "r", NULL, NULL, NULL, NULL, &in);
-    parse_definition(key_def, ANY_SIZE_BUFFER, "r", NULL, &key, NULL,
+    parse_definition(key_def, ANY_SIZE_BUFFER, "r", &valid_key, &key, NULL,
         &key_length, NULL);
+    if (!valid_key) die(EXIT_FAILURE, "No key provided");
 
     if (parse_text(in, &ciphertext) < 0) die(EXIT_FAILURE, "No password available");
     text_symmetric_encryption(ciphertext, 0, key, key_length, &password);
@@ -432,7 +430,7 @@ main(int argc, const char *argv[])
     const char **arg, *notes = NULL, *output_format = "%p";
     struct definition
         output_def = (struct definition) {.mode = STDOUT,},
-        key_def = (struct definition) {.mode = INTERACTIVE_PROMPT,},
+        key_def = (struct definition) {.mode = NONE,},
         password_def = (struct definition) {
             .mode = RANDOMLY_GENERATED,
             .length = DEFAULT_PASSWORD_LENGTH,
@@ -471,9 +469,7 @@ main(int argc, const char *argv[])
             }
         } else if (IS_EITHER(*arg, "-k", "--key") && subcommand != NOISE) {
             EXPECT_ARGUMENT();
-            if (IS(*arg, "?")) {
-                key_def.mode = INTERACTIVE_PROMPT;
-            } else if (IS(*arg, "-")) {
+            if (IS(*arg, "-")) {
                 key_def.mode = STDIN;
             } else {
                 key_def.mode = STRING;
@@ -485,9 +481,7 @@ main(int argc, const char *argv[])
             key_def.value = *arg;
         } else if (IS_EITHER(*arg, "-p", "--password") && subcommand == CREATE) {
             EXPECT_ARGUMENT();
-            if (IS(*arg, "?")) {
-                password_def.mode = INTERACTIVE_PROMPT;
-            } else if (IS(*arg, "-")) {
+            if (IS(*arg, "-")) {
                 password_def.mode = STDIN;
             } else {
                 password_def.mode = STRING;
@@ -503,9 +497,7 @@ main(int argc, const char *argv[])
             password_def.character_set = parse_character_set(*arg);
         } else if (IS_EITHER(*arg, "-u", "--username") && subcommand == CREATE) {
             EXPECT_ARGUMENT();
-            if (IS(*arg, "?")) {
-                username_def.mode = INTERACTIVE_PROMPT;
-            } else if (IS(*arg, "-")) {
+            if (IS(*arg, "-")) {
                 username_def.mode = STDIN;
             } else {
                 username_def.mode = STRING;

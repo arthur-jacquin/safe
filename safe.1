@@ -20,7 +20,7 @@ format.
 .nf
 \-o|\--output <file>
 .ni
-.SS Key (default: interactive prompt)
+.SS Key (default: none)
 .nf
 -k|--key <key>
 -K|--key-file <file>
@@ -82,8 +82,19 @@ provided, as specified in the LICENSE.
 .B # cat entry.safe
 ]e623d8e07fbb9d8817dd2fc9d91c4e40dfba813a87be7f6502e47e528634040a5c1bec0d10b8ac3397cab81968f8066e
 
-.B # safe query --key key entry.safe # | clipboard-program
+.B # safe query --key key entry.safe
 password
+.fi
+.in
+.P
+To hide sensitive data, one can use the provided
+.B safe_prompt
+shell script for inputs and pipe the result to a clipboard program:
+.P
+.in +4n
+.nf
+.B # safe query --key `safe_prompt Key` entry.safe | clipboard-program
+Key:
 .fi
 .in
 .SH SEE ALSO

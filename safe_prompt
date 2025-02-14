@@ -1,0 +1,10 @@
+#!/bin/sh
+# See LICENSE file for copyright and license details.
+
+if [ "$#" -gt 0 ]; then
+read -p "$1:
+" -s INPUT
+else
+read -s INPUT
+fi
+echo $INPUT
