@@ -73,7 +73,6 @@ static void create_password_entry(struct definition key_def,
     const char *notes);
 static void query_password_entry(struct definition entry_def,
     struct definition key_def, const char *output_format);
-static void generate_noise(void);
 
 
 static const char *CHARACTER_SETS[] = {
@@ -87,7 +86,6 @@ static const char USAGE[] =
     "\n"
     "safe c|create [OPTIONS]        create password entry\n"
     "safe q|query [OPTIONS] [FILE]  query password entry\n"
-    "safe n|noise                   generate noise (can be used to clear clipboard)\n"
     "\n"
     "OPTIONS:\n"
     "-o|--output <file>\n"
@@ -413,16 +411,6 @@ query_password_entry(struct definition entry_def, struct definition key_def,
     put_formatted_output(output_format, password, username, valid_username);
 }
 
-static void
-generate_noise(void)
-{
-    uint8_t bytes[16];
-
-    random_bytes(bytes, sizeof(bytes), 0);
-    put_bytes_as_hex(bytes, sizeof(bytes));
-    put('\n');
-}
-
 
 int
 main(int argc, const char *argv[])
@@ -445,7 +433,6 @@ main(int argc, const char *argv[])
     enum subcommand {
         CREATE,
         QUERY,
-        NOISE,
     } subcommand;
 
     // parse subcommand
@@ -454,7 +441,6 @@ main(int argc, const char *argv[])
     else if (IS_EITHER(argv[1], "-v", "--version")) die(EXIT_SUCCESS, VERSION);
     else if (IS_EITHER(argv[1], "c", "create")) subcommand = CREATE;
     else if (IS_EITHER(argv[1], "q", "query")) subcommand = QUERY;
-    else if (IS_EITHER(argv[1], "n", "noise")) subcommand = NOISE;
     else goto invalid_usage;
 
     // parse optional arguments
@@ -463,11 +449,11 @@ main(int argc, const char *argv[])
             EXPECT_ARGUMENT();
             output_def.mode = IS(*arg, "-") ? STDOUT : FILENAME;
             output_def.value = *arg;
-        } else if (IS_EITHER(*arg, "-k", "--key") && subcommand != NOISE) {
+        } else if (IS_EITHER(*arg, "-k", "--key")) {
             EXPECT_ARGUMENT();
             key_def.mode = IS(*arg, "-") ? STDIN : STRING;
             key_def.value = *arg;
-        } else if (IS_EITHER(*arg, "-K", "--key-file") && subcommand != NOISE) {
+        } else if (IS_EITHER(*arg, "-K", "--key-file")) {
             EXPECT_ARGUMENT();
             key_def.mode = FILENAME;
             key_def.value = *arg;
@@ -525,7 +511,7 @@ main(int argc, const char *argv[])
     if (*arg) goto invalid_usage;
 
     // check number of definition using stdin
-    if ((key_def.mode == STDIN && subcommand != NOISE) +
+    if ((key_def.mode == STDIN) +
         (password_def.mode == STDIN && subcommand == CREATE) +
         (username_def.mode == STDIN && subcommand == CREATE) +
         (entry_def.mode == STDIN && subcommand == QUERY) > 1)
@@ -539,9 +525,6 @@ main(int argc, const char *argv[])
         break;
     case QUERY:
         query_password_entry(entry_def, key_def, output_format);
-        break;
-    case NOISE:
-        generate_noise();
         break;
     }
 
