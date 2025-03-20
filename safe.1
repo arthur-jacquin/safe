@@ -2,18 +2,23 @@
 .SH NAME
 safe \- simple symmetric-key password encrypter
 .SH SYNOPSIS
-.B safe c|create
-.I [OPTIONS]
-.nf
-.fi
-.B safe q|query
+.B safe
 .I [OPTIONS] [FILE]
 .SH DESCRIPTION
 .B safe
 is a password encrypter/decrypter using a symmetric\-key encryption algorithm.
 It encodes data in a textual, two-line (one for password, one for username)
 format.
+.P
+If
+.I FILE
+is specified,
+.B safe
+decrypts and queries its content (or stdin if
+.I FILE
+is "-"), else creates and encrypts a new entry.
 .SH OPTIONS
+.SS Output (default: stdout)
 .nf
 \-o|\--output <file>
 .ni
@@ -22,28 +27,28 @@ format.
 -k|--key <key>
 -K|--key-file <file>
 .ni
-.SS Password (create subcommand only, default: random generation)
+.SS Password (only for creation, default: random generation)
 .nf
 -p|--password <password>
 -c|--password-character-set <generated-password-character-set-id> (default: p)
 -l|--password-length <generated-password-length> (default: 20)
 .ni
-.SS Username (create subcommand only, default: none)
+.SS Username (only for creation, default: none)
 .nf
 -u|--username <username>
 -U|--random-username
 -C|--username-character-set <generated-username-character-set-id> (default: p)
 -L|--username-length <generated-username-length> (default: 20)
 .ni
-.SS Notes (create subcommand only, default: none)
+.SS Notes (only for creation, default: none)
 .nf
 -n|--notes <notes>
 .ni
-.SS Query output (query subcommand only, default: password)
+.SS Query output (only for querying, default: password)
 .nf
--f|--format <output-format>
--p|--password                  short for: --format %p
--u|--username                  short for: --format %u
+-f|--format <output-format> (default: %p)
+-0|--only-password             short for: --format %p
+-1|--only-username             short for: --format %u
 -s|--separator <separator>     short for: --format %u<separator>%p
 .ni
 .SS Characters sets
@@ -75,11 +80,11 @@ provided, as specified in the LICENSE.
 .SH EXAMPLES
 .in +4n
 .nf
-.B # safe create --key key --password password > entry.safe
+.B # safe --key key --password password > entry.safe
 .B # cat entry.safe
 ]e623d8e07fbb9d8817dd2fc9d91c4e40dfba813a87be7f6502e47e528634040a5c1bec0d10b8ac3397cab81968f8066e
 
-.B # safe query --key key entry.safe
+.B # safe --key key entry.safe
 password
 .fi
 .in
@@ -90,7 +95,7 @@ shell script for inputs and pipe the result to a clipboard program:
 .P
 .in +4n
 .nf
-.B # safe query --key `safe_prompt Key` entry.safe | clipboard-program
+.B # safe --key `safe_prompt Key` entry.safe | clipboard-program
 Key:
 .fi
 .in

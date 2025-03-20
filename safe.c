@@ -84,29 +84,31 @@ static const char *CHARACTER_SETS[] = {
 static const char USAGE[] =
     "safe " VERSION " - simple symmetric-key password encrypter\n"
     "\n"
-    "safe c|create [OPTIONS]        create password entry\n"
-    "safe q|query [OPTIONS] [FILE]  query password entry\n"
+    "USAGE:\n"
+    "safe [OPTIONS]                 create password entry\n"
+    "safe [OPTIONS] FILE            query password entry\n"
     "\n"
     "OPTIONS:\n"
+    "OUTPUT (default: stdout):\n"
     "-o|--output <file>\n"
     "KEY (default: none):\n"
     "-k|--key <key>\n"
     "-K|--key-file <file>\n"
-    "PASSWORD (create subcommand only, default: random generation):\n"
+    "PASSWORD (only for creation, default: random generation):\n"
     "-p|--password <password>\n"
     "-c|--password-character-set <generated-password-character-set-id> (default: p)\n"
     "-l|--password-length <generated-password-length> (default: 20)\n"
-    "USERNAME (create subcommand only, default: none):\n"
+    "USERNAME (only for creation, default: none):\n"
     "-u|--username <username>\n"
     "-U|--random-username\n"
     "-C|--username-character-set <generated-username-character-set-id> (default: p)\n"
     "-L|--username-length <generated-username-length> (default: 20)\n"
-    "NOTES (create subcommand only, default: none):\n"
+    "NOTES (only for creation, default: none):\n"
     "-n|--notes <notes>\n"
-    "QUERY OUTPUT (query subcommand only, default: password):\n"
-    "-f|--format <output-format>\n"
-    "-p|--password                  short for: --format %p\n"
-    "-u|--username                  short for: --format %u\n"
+    "QUERY OUTPUT (only for querying, default: password):\n"
+    "-f|--format <output-format> (default: %p)\n"
+    "-0|--only-password             short for: --format %p\n"
+    "-1|--only-username             short for: --format %u\n"
     "-s|--separator <separator>     short for: --format %u<separator>%p\n"
     "\n"
     "CHARACTER SETS:\n"
@@ -435,17 +437,13 @@ main(int argc, const char *argv[])
         QUERY,
     } subcommand;
 
-    // parse subcommand
-    if (argc < 2) goto invalid_usage;
-    else if (IS_EITHER(argv[1], "-h", "--help")) die(EXIT_SUCCESS, USAGE);
-    else if (IS_EITHER(argv[1], "-v", "--version")) die(EXIT_SUCCESS, VERSION);
-    else if (IS_EITHER(argv[1], "c", "create")) subcommand = CREATE;
-    else if (IS_EITHER(argv[1], "q", "query")) subcommand = QUERY;
-    else goto invalid_usage;
-
     // parse optional arguments
-    for (arg = argv + 2; *arg; arg++) {
-        if (IS_EITHER(*arg, "-o", "--output")) {
+    for (arg = argv + 1; *arg; arg++) {
+        if (IS_EITHER(*arg, "-h", "--help")) {
+            die(EXIT_SUCCESS, USAGE);
+        } else if (IS_EITHER(*arg, "-v", "--version")) {
+            die(EXIT_SUCCESS, VERSION);
+        } else if (IS_EITHER(*arg, "-o", "--output")) {
             EXPECT_ARGUMENT();
             output_def.mode = IS(*arg, "-") ? STDOUT : FILENAME;
             output_def.value = *arg;
@@ -457,43 +455,43 @@ main(int argc, const char *argv[])
             EXPECT_ARGUMENT();
             key_def.mode = FILENAME;
             key_def.value = *arg;
-        } else if (IS_EITHER(*arg, "-p", "--password") && subcommand == CREATE) {
+        } else if (IS_EITHER(*arg, "-p", "--password")) {
             EXPECT_ARGUMENT();
             password_def.mode = IS(*arg, "-") ? STDIN : STRING;
             password_def.value = *arg;
-        } else if (IS_EITHER(*arg, "-l", "--password-length") && subcommand == CREATE) {
+        } else if (IS_EITHER(*arg, "-l", "--password-length")) {
             EXPECT_ARGUMENT();
             char *remaining;
             password_def.length = strtol(*arg, &remaining, 10);
             if (*remaining) goto invalid_usage;
-        } else if (IS_EITHER(*arg, "-c", "--password-character-set") && subcommand == CREATE) {
+        } else if (IS_EITHER(*arg, "-c", "--password-character-set")) {
             EXPECT_ARGUMENT();
             password_def.character_set = parse_character_set(*arg);
-        } else if (IS_EITHER(*arg, "-u", "--username") && subcommand == CREATE) {
+        } else if (IS_EITHER(*arg, "-u", "--username")) {
             EXPECT_ARGUMENT();
             username_def.mode = IS(*arg, "-") ? STDIN : STRING;
             username_def.value = *arg;
-        } else if (IS_EITHER(*arg, "-U", "--random-username") && subcommand == CREATE) {
+        } else if (IS_EITHER(*arg, "-U", "--random-username")) {
             username_def.mode = RANDOMLY_GENERATED;
-        } else if (IS_EITHER(*arg, "-L", "--username-length") && subcommand == CREATE) {
+        } else if (IS_EITHER(*arg, "-L", "--username-length")) {
             EXPECT_ARGUMENT();
             char *remaining;
             username_def.length = strtol(*arg, &remaining, 10);
             if (*remaining) goto invalid_usage;
-        } else if (IS_EITHER(*arg, "-C", "--username-character-set") && subcommand == CREATE) {
+        } else if (IS_EITHER(*arg, "-C", "--username-character-set")) {
             EXPECT_ARGUMENT();
             username_def.character_set = parse_character_set(*arg);
-        } else if (IS_EITHER(*arg, "-n", "--notes") && subcommand == CREATE) {
+        } else if (IS_EITHER(*arg, "-n", "--notes")) {
             EXPECT_ARGUMENT();
             notes = *arg;
-        } else if (IS_EITHER(*arg, "-f", "--format") && subcommand == QUERY) {
+        } else if (IS_EITHER(*arg, "-f", "--format")) {
             EXPECT_ARGUMENT();
             output_format = *arg;
-        } else if (IS_EITHER(*arg, "-p", "--password") && subcommand == QUERY) {
+        } else if (IS_EITHER(*arg, "-0", "--only-password")) {
             output_format = "%p";
-        } else if (IS_EITHER(*arg, "-u", "--username") && subcommand == QUERY) {
+        } else if (IS_EITHER(*arg, "-1", "--only-username")) {
             output_format = "%u";
-        } else if (IS_EITHER(*arg, "-s", "--separator") && subcommand == QUERY) {
+        } else if (IS_EITHER(*arg, "-s", "--separator")) {
             EXPECT_ARGUMENT();
             char *format = malloc(strlen(*arg) + 5);
             sprintf(format, "%%u%s%%p", *arg);
@@ -502,11 +500,14 @@ main(int argc, const char *argv[])
     }
 
     // parse positional arguments
-    if (subcommand == QUERY && *arg) {
+    if (*arg) {
         if (IS(*arg, "--")) EXPECT_ARGUMENT();
         entry_def.mode = IS(*arg, "-") ? STDIN : FILENAME;
         entry_def.value = *arg;
         arg++;
+        subcommand = QUERY;
+    } else {
+        subcommand = CREATE;
     }
     if (*arg) goto invalid_usage;
 
